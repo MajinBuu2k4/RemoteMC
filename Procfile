@@ -1,1 +1,1 @@
-web: python RemoteMc.py
+web: python main.py
