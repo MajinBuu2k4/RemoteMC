@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Module Control Panel</title>
+</head>
+<body>
+    <h1>🛠 Module Control Panel</h1>
+    <p><strong>Người dùng:</strong> {{ username }}</p>
+    <p><strong>Module:</strong> {{ module_name }}</p>
+    <p><strong>Trạng thái hiện tại:</strong> 
+        {% if is_enabled %}✅ Đang BẬT
+        {% else %}❌ Đang TẮT
+        {% endif %}
+    </p>
+    <form action="/toggle" method="post" onsubmit="return sendToggle();">
+        <label for="username">Tên người điều khiển:</label><br>
+        <input type="text" id="username" required><br><br>
+
+        <label for="enable">Trạng thái:</label><br>
+        <select id="enable">
+            <option value="true">BẬT</option>
+            <option value="false">TẮT</option>
+        </select><br><br>
+
+        <button type="submit">Gửi</button>
+    </form>
+
+    <script>
+        function sendToggle() {
+            fetch("/toggle", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enable: document.getElementById("enable").value === "true",
+                    username: document.getElementById("username").value
+                })
+            }).then(() => window.location.reload());
+            return false;
+        }
+    </script>
+</body>
+</html>

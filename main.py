@@ -1,30 +1,49 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+import os
 
 app = Flask(__name__)
+CORS(app)
 
-# Module state lưu trong RAM (dùng Redis hoặc file nếu cần persist)
-MODULE_STATE = {
-    "AutoLoginCum": False,
-    "last_user": "Unknown"
+# Biến lưu trạng thái module
+module_enabled = {
+    "AutoLoginCum": True
 }
 
-@app.route("/")
+# Biến lưu người dùng gửi request gần nhất (nếu có)
+last_username = "Không rõ"
+
+@app.route('/')
 def index():
-    return render_template("index.html", module_state=MODULE_STATE)
+    return render_template("dashboard.html", 
+        username=last_username, 
+        module_name="AutoLoginCum", 
+        is_enabled=module_enabled["AutoLoginCum"]
+    )
 
-@app.route("/toggle/<module_name>")
-def toggle_module(module_name):
-    if module_name in MODULE_STATE:
-        MODULE_STATE[module_name] = not MODULE_STATE[module_name]
-    return redirect("/")
-
-@app.route("/offall", methods=["GET"])
+@app.route('/offall', methods=['GET'])
 def offall():
-    return str(MODULE_STATE.get("AutoLoginCum", False)).lower()
+    # Nếu trả về "true" → client sẽ tắt module
+    return jsonify(str(not module_enabled["AutoLoginCum"]).lower())
 
-@app.route("/ping", methods=["POST"])
-def receive_ping():
+@app.route('/toggle', methods=['POST'])
+def toggle_module():
+    global last_username
+
     data = request.get_json()
-    if data and "username" in data:
-        MODULE_STATE["last_user"] = data["username"]
-    return "ok"
+    new_state = data.get("enable", False)
+    user = data.get("username", "Không rõ")
+
+    module_enabled["AutoLoginCum"] = bool(new_state)
+    last_username = user
+
+    return jsonify({
+        "success": True,
+        "module": "AutoLoginCum",
+        "enabled": module_enabled["AutoLoginCum"],
+        "set_by": user
+    })
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
